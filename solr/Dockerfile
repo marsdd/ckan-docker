@@ -8,9 +8,11 @@ ENV SOLR_CORE ckan
 RUN mkdir -p /opt/solr/server/solr/$SOLR_CORE/conf
 RUN mkdir -p /opt/solr/server/solr/$SOLR_CORE/data
 
+RUN wget https://raw.githubusercontent.com/marsdd/ckan/master/ckan/config/solr/schema.xml
+
 # Adding Files
-ADD ./contrib/docker/solr/solrconfig.xml \
-./ckan/config/solr/schema.xml \
+ADD ./solr/solrconfig.xml \
+https://raw.githubusercontent.com/marsdd/ckan/master/ckan/config/solr/schema.xml \
 https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.6.5/solr/server/solr/configsets/basic_configs/conf/currency.xml \
 https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.6.5/solr/server/solr/configsets/basic_configs/conf/synonyms.txt \
 https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.6.5/solr/server/solr/configsets/basic_configs/conf/stopwords.txt \

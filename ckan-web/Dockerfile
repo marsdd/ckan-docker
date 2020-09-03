@@ -18,40 +18,10 @@ RUN apt-get -q -y update && \
     postgresql-client \
     curl
 
-## Install required system packages
-#RUN apt-get -q -y update \
-#    && DEBIAN_FRONTEND=noninteractive apt-get -q -y upgrade \
-#    && apt-get -q -y install \
-#        python-dev \
-#        python-pip \
-#        python-virtualenv \
-#        python-wheel \
-#        python3-dev \
-#        python3-pip \
-#        python3-virtualenv \
-#        python3-wheel \
-#        libpq-dev \
-#        libxml2-dev \
-#        libxslt-dev \
-#        libgeos-dev \
-#        libssl-dev \
-#        libffi-dev \
-#        postgresql-client \
-#        build-essential \
-#        git-core \
-#        vim \
-#        wget \
-#        curl \
-#    && apt-get -q clean \
-#    && rm -rf /var/lib/apt/lists/*
-#
-#RUN apt-get update && apt-get install -y redis-tools
-
 # Define environment variables
 ENV CKAN_HOME=/usr/lib/ckan
 ENV CKAN_VENV=$CKAN_HOME/venv
 ENV CKAN_CONFIG=$CKAN_HOME/config
-ENV CKAN_STORAGE_PATH=/var/lib/ckan
 ENV CKAN_INI=$CKAN_CONFIG/production.ini
 
 # Build-time variables specified by docker-compose.yml / .env
@@ -61,11 +31,8 @@ ARG MARS_MULTILANG_PLUGIN_VERSION
 ARG MARS_CKAN_VERSION
 ARG GAID
 
-# Create ckan user
-RUN useradd -r -u 900 -m -c "ckan account" -d $CKAN_HOME -s /bin/false ckan
-
 ### Setup virtual environment for CKAN
-RUN mkdir -p $CKAN_CONFIG $CKAN_STORAGE_PATH
+RUN mkdir -p $CKAN_CONFIG
 
 RUN pip install virtualenv
 
@@ -75,7 +42,7 @@ RUN mkdir -p $CKAN_CONFIG && \
 
 ADD https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/requirement-setuptools.txt \
     https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/requirements.txt \
-    https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/wsgi.py \
+
     $CKAN_HOME/
 
 ADD https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/ckan/config/who.ini \
@@ -96,14 +63,46 @@ RUN ckan-pip install -e git+https://github.com/ckan/ckanext-googleanalytics.git#
 RUN ckan-pip install uwsgi
 #
 ## Setup CKAN modules
-ADD ./ckan-entrypoint.sh $CKAN_HOME/ckan-entrypoint.sh
 RUN ckan-pip install https://github.com/marsdd/ckanext-marsavin/archive/$MARS_PLUGIN_VERSION.zip && \
-  ckan-pip install https://github.com/marsdd/ckanext-multilang/archive/$MARS_MULTILANG_PLUGIN_VERSION.zip && \
-  ln -s $CKAN_VENV/bin/ckan /usr/local/bin/ckan && \
-  ln -s $CKAN_VENV/bin/uwsgi /usr/local/bin/uwsgi && \
-  chown -R ckan:ckan $CKAN_HOME $CKAN_VENV $CKAN_CONFIG $CKAN_STORAGE_PATH && \
-  chmod +x $CKAN_HOME/ckan-entrypoint.sh
+  ckan-pip install https://github.com/marsdd/ckanext-multilang/archive/$MARS_MULTILANG_PLUGIN_VERSION.zip
 
+# Multistage build process, this is the runner container
+FROM python:3.8.5-slim-buster as RUNNER
+
+# Define environment variables
+ENV CKAN_HOME=/usr/lib/ckan
+ENV CKAN_VENV=$CKAN_HOME/venv
+ENV CKAN_CONFIG=$CKAN_HOME/config
+ENV CKAN_INI=$CKAN_CONFIG/production.ini
+
+# Build-time variables specified by docker-compose.yml / .env
+ARG CKAN_SITE_URL
+ARG MARS_CKAN_VERSION
+ARG GAID
+
+# Create ckan user
+RUN useradd -r -u 900 -m -c "ckan account" -d $CKAN_HOME -s /bin/false ckan
+
+#install required packages for build and run
+RUN apt-get -q -y update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -q -y upgrade && \
+    apt-get -y install postgresql-client curl
+
+RUN mkdir -p $CKAN_CONFIG
+
+COPY --from=builder $CKAN_VENV $CKAN_VENV
+
+RUN ln -s $CKAN_VENV/bin/pip /usr/local/bin/ckan-pip && \
+    ln -s $CKAN_VENV/bin/ckan /usr/local/bin/ckan && \
+    ln -s $CKAN_VENV/bin/uwsgi /usr/local/bin/uwsgi && \
+    chown -R ckan:ckan $CKAN_HOME $CKAN_VENV $CKAN_CONFIG
+
+
+ADD ./ckan-entrypoint.sh \
+    https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/wsgi.py \
+    $CKAN_HOME/
+
+RUN chmod +x $CKAN_HOME/ckan-entrypoint.sh
 RUN ckan generate config "$CKAN_INI"
 
 ## m.m. - replace Google Analytics ID
@@ -115,6 +114,6 @@ USER ckan
 EXPOSE 5000
 
 #CMD uwsgi
-##CMD ["ckan","run", "-H", "0.0.0.0", "-p]
-CMD ["uwsgi", "--http", ":5000", "--wsgi-file", "/usr/lib/ckan/wsgi.py", "--master", "--enable-threads", "--need-app"]
+CMD ["ckan","run", "-H", "0.0.0.0", "-p", "5000"]
+#CMD ["uwsgi", "--http", ":5000", "--wsgi-file", "/usr/lib/ckan/wsgi.py", "--master", "--enable-threads", "--need-app"]
 

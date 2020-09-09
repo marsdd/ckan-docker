@@ -42,11 +42,7 @@ RUN mkdir -p $CKAN_CONFIG && \
 
 ADD https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/requirement-setuptools.txt \
     https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/requirements.txt \
-
     $CKAN_HOME/
-
-ADD https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/ckan/config/who.ini \
-    $CKAN_CONFIG/
 
 # Setup core ckan
 RUN ckan-pip install -r $CKAN_HOME/requirement-setuptools.txt
@@ -92,15 +88,17 @@ RUN mkdir -p $CKAN_CONFIG
 
 COPY --from=builder $CKAN_VENV $CKAN_VENV
 
+ADD ./ckan-entrypoint.sh \
+    https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/wsgi.py \
+    $CKAN_HOME/
+
+ADD https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/ckan/config/who.ini \
+    $CKAN_CONFIG/
+
 RUN ln -s $CKAN_VENV/bin/pip /usr/local/bin/ckan-pip && \
     ln -s $CKAN_VENV/bin/ckan /usr/local/bin/ckan && \
     ln -s $CKAN_VENV/bin/uwsgi /usr/local/bin/uwsgi && \
     chown -R ckan:ckan $CKAN_HOME $CKAN_VENV $CKAN_CONFIG
-
-
-ADD ./ckan-entrypoint.sh \
-    https://raw.githubusercontent.com/marsdd/ckan/$MARS_CKAN_VERSION/wsgi.py \
-    $CKAN_HOME/
 
 RUN chmod +x $CKAN_HOME/ckan-entrypoint.sh
 RUN ckan generate config "$CKAN_INI"
@@ -114,6 +112,6 @@ USER ckan
 EXPOSE 5000
 
 #CMD uwsgi
-CMD ["ckan","run", "-H", "0.0.0.0", "-p", "5000"]
-#CMD ["uwsgi", "--http", ":5000", "--wsgi-file", "/usr/lib/ckan/wsgi.py", "--master", "--enable-threads", "--need-app"]
+#CMD ["ckan","run", "-H", "0.0.0.0", "-p", "5000"]
+CMD ["uwsgi", "--http", ":5000", "--wsgi-file", "/usr/lib/ckan/wsgi.py", "--master", "--enable-threads", "--need-app"]
 

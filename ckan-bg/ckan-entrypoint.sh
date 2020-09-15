@@ -101,5 +101,4 @@ ckan multilang initsearch
 # Rebuild the search index
 ckan search-index rebuild
 
-cd /usr/lib/ckan/venv/src/ckan
 exec "$@"

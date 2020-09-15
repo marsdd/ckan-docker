@@ -32,8 +32,7 @@ services:
   ckan-bg:
     container_name: ${COMPOSE_PROJECT_NAME}_ckan-bg
     build:
-      context: .
-      dockerfile: ckan-bg/Dockerfile
+      context: ./ckan-bg
       args:
         - CKAN_SITE_URL=${CKAN_SITE_URL}
         - MARS_PLUGIN_VERSION=${MARS_PLUGIN_VERSION}

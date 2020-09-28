@@ -192,6 +192,88 @@ services:
 
     networks:
       - ckan
+
+  ckan-test:
+    build:
+      context: ./ckan-web/test
+      args:
+        - CKAN_SITE_URL=${CKAN_SITE_URL}
+        - MARS_PLUGIN_VERSION=${MARS_PLUGIN_VERSION}
+        - MARS_MULTILANG_PLUGIN_VERSION=${MARS_MULTILANG_PLUGIN_VERSION}
+        - MARS_CKAN_VERSION=${MARS_CKAN_VERSION}
+        # m.m.
+        - GAID=${GAID}
+    #    links:
+    #      # a.s.
+    #      - db
+    #      - solr
+    #      - redis
+    depends_on:
+      - db
+      # a.s. added solr
+      - solr
+    #    ports:
+    #      - "0.0.0.0:${CKAN_PORT}:5000"
+    environment:
+      # a.s. used from ckan-entrypoint.sh to wait until solr is up and running
+      - solr_host=solr
+      - solr_port=8983
+
+      # a.s. notification emails distribution group when new
+      # datasets and resources are created
+      - oce_email_distribution_group=${oce_email_distribution_group}
+
+      # s.h
+      # mailchimp api and audience id values for adding users to mailchimp list
+      - mailchimp_audience_id=${mailchimp_audience_id}
+      - mailchimp_api_key=${mailchimp_api_key}
+
+      # a.s. Google tracking
+      - CKAN_TRACKING_ENABLED=True
+
+      # Defaults work with linked containers, change to use own Postgres, SolR, Redis or Datapusher
+      - CKAN_SQLALCHEMY_URL=postgresql://ckan:${POSTGRES_PASSWORD}@${POSTGRES_URL}/ckan_test
+      - CKAN_DATASTORE_WRITE_URL=postgresql://ckan:${POSTGRES_PASSWORD}@${POSTGRES_URL}/datastore_test
+      - CKAN_DATASTORE_READ_URL=postgresql://datastore_ro:${DATASTORE_READONLY_PASSWORD}@${POSTGRES_URL}/datastore_test
+
+      - CKAN_SOLR_URL=http://solr:8983/solr/ckan
+      - CKAN_REDIS_URL=redis://redis:6379/1
+      - CKAN_DATAPUSHER_URL=http://datapusher:8800
+      - CKAN_SITE_URL=${CKAN_SITE_URL}
+      - CKAN_MAX_UPLOAD_SIZE_MB=${CKAN_MAX_UPLOAD_SIZE_MB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DS_RO_PASS=${DATASTORE_READONLY_PASSWORD}
+
+      - CKAN_SMTP_SERVER=${CKAN_SMTP_SERVER}
+      - CKAN_SMTP_STARTTLS=${CKAN_SMTP_STARTTLS}
+      - CKAN_SMTP_USER=${CKAN_SMTP_USER}
+      - CKAN_SMTP_PASSWORD=${CKAN_SMTP_PASSWORD}
+      - CKAN_SMTP_MAIL_FROM=${CKAN_SMTP_MAIL_FROM}
+      - CKAN_APP_UUID=${CKAN_APP_UUID}
+      - CKAN_APP_SECRET=${CKAN_APP_SECRET}
+
+      - HOME=/usr/lib/ckan
+
+    volumes:
+      - ./ckan-web/volumes/ckan_home:/var/lib/ckan
+      # - ckan_config:/etc/ckan
+      # - ckan_home:/usr/lib/ckan
+      #      - ckan_storage:/var/lib/ckan
+
+      # a.s. added next line to work locally
+      # - .:/usr/lib/ckan
+      # - ../../:/usr/lib/ckan/venv
+      # - ../..:/usr/lib/ckan/venv/src/ckan
+      # - ckan_home:/usr/lib/ckan
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+    networks:
+      - ckan
 #    deploy:
 #      resources:
 #        limits:

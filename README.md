@@ -29,6 +29,6 @@ Start app:
     docker-compose up
     
 That's it, that should do it.  You are up and running locally.  It may
- require you to restart couple of times as data is built, but otherwise that
- 's all that's needed.
+require you to restart couple of times as data is built, but otherwise that's 
+all that's needed.
 

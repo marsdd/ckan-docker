@@ -28,6 +28,21 @@ Start app:
     cd /path/to/ckan-docker
     docker-compose up
     
+    
+## Start only the non app resources
+
+Start database, solr and redis only::
+
+    cd /path/to/ckan-docker
+    docker-compose up db solr redis
+    
+## Start the background workers
+
+Start worker::
+
+    cd /path/to/ckan-docker
+    docker-compose up ckan-bg
+    
 That's it, that should do it.  You are up and running locally.  It may
 require you to restart couple of times as data is built, but otherwise that's 
 all that's needed.

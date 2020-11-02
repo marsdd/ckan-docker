@@ -10,6 +10,8 @@ python 3 first rebuild of the ckan docker.
 
 * https://docs.docker.com/get-docker/
 * https://docs.docker.com/compose/install/
+* Using environment variables via https://docs.docker.com/compose/env-file
+/ method.  Check out .env.template file for example on how to fill this.
 
 ##  Clone the repository
 
@@ -20,6 +22,8 @@ Clone:
 OR: 
 
     git clone https://github.com/marsdd/ckan-docker.git
+    
+
     
 ## Start the app
 
